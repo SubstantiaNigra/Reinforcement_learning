@@ -20,46 +20,38 @@ def choose_action(size, epsilon, Q_values, actions):
     exp_probs = np.random.uniform(low=0, high=1, size=size[1])# probs to determine if
                                             #exploration or exploitation occurs
     explore = tuple(np.where(exp_probs > (1 - epsilon))) # indices of runs with exploration
+                                                    # includes a case epsilon = 0
     exploit = tuple(np.where(exp_probs <= (1 - epsilon))) # indices of runs with exploitation
     chosen_actions = np.zeros(size[1]) # prepare a vector with chosen actions
     if explore[0].size: # if explore is not empty
-        # print('explore', explore[0])
         random_actions = rng.choice(actions, size=len(explore[0]))
-        # print('rands', random_actions)
         chosen_actions[explore] = random_actions
         chosen_actions = chosen_actions.astype(int)
     if exploit[0].size: # if exploit is not empty
-        # print('exploit', exploit)
         chosen_actions[exploit] = np.argmax(Q_values[:, exploit], axis=0)
         chosen_actions = chosen_actions.astype(int)
-        # print('chosen_exploits', chosen_actions)
-    # print('chosen_actions', chosen_actions)
-    # print('--------------------')
     return chosen_actions
 
 def get_rewards(Q_values, actions, chosen_actions, n_A, num_of_action):
     rng = np.random.default_rng()
-    # Rewards = np.zeros(size)
-    # for i in range(size[0]):
-    #     for j in range(size[1]):
-    #         Rewards[i,j] = rng.normal(loc=q_values[i,j], scale=std)
     Rewards = rng.normal(loc=q_values, scale=std, size=size) # choose rewards from
                                                             # q_values distributions
     current_reward = np.zeros(size[1]) # list to assign the most recent rewards
                                             # for averaging
     for run, action in enumerate(chosen_actions):
-        num_of_action[action, run] += 1 #update the number of occurences of a choice
-        Q_value = Q_values[action, run]
-        Reward = Rewards[action, run]
+        num_of_action[action, run] += 1 # update the number of occurences of a choice
+        Q_value = Q_values[action, run] # a Q_value we want to update
+        Reward = Rewards[action, run] # Reward corresponding to Q_value
         diff = Reward - Q_value
-        divider = 1/(num_of_action[action, run])
-        reward = Q_value + divider*diff
+        divider = 1/(num_of_action[action, run]) # how many times an action was chosen
+        reward = Q_value + divider*diff # a value with which we want to update
+                                        # Q_value for a given action
         Q_values[action, run] = reward
-        current_reward[run] = reward
+        current_reward[run] = reward # assign to a list for plotting
     return Q_values, num_of_action, current_reward
 
 rows = 10 # number of actions
-runs = 1000 # number of runs
+runs = 2000 # number of runs
 size = (rows, runs)
 mean = 0
 variance = 1
@@ -85,9 +77,6 @@ while n_A < steps_num:
                             num_of_action)
 
     # obtain averages to create plot
-    # print(Q_values)
-    # maximal_Q_values_idx = np.argmax(Q_values, axis=0)
-    # averages = np.mean(Q_values[maximal_Q_values_idx, :])
     averages = np.mean(current_reward)
     means_to_plot[n_A] = averages
 
